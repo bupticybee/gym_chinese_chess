@@ -1,0 +1,1 @@
+from gym_chinese_chess.envs.chinese_chess_env import ChineseChessEnv
