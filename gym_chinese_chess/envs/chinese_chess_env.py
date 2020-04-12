@@ -273,12 +273,13 @@ class Position(namedtuple('Position', 'board')):
 
 class ChineseChessEnv(gym.Env):
     def __init__(self):
+        self.cache_steps = 6
         self.pos = Position(initial)
         self.his = [copy.copy(self.pos.board)]
         self.posdic = {}
         self.posdic[self.pos.board] = 1
 
-        self.observation_space = spaces.Box(-7, 7, (6, 10, 9))  # board 8x8
+        self.observation_space = spaces.Box(-7, 7, (self.cache_steps, 10, 9))  # board 8x8
         # 棋盘的笛卡尔积 + 投降
         self.action_space = spaces.Discrete(90 * 90 + 1)
         self.current_player = 0
@@ -289,8 +290,8 @@ class ChineseChessEnv(gym.Env):
         return [Position(i) for i in self.his]
 
     def generate_observation(self):
-        observation = np.zeros([6,10,9])
-        for i,one_pos in enumerate(self.his[::-1][:6]):
+        observation = np.zeros([self.cache_steps,10,9])
+        for i,one_pos in enumerate(self.his[::-1][:self.cache_steps]):
             if i % 2 == 0:
                 observation[i] = Position(one_pos).to_numpy()
             else:
@@ -305,7 +306,7 @@ class ChineseChessEnv(gym.Env):
         if action_str == "resign":
             assert (self.resigned[self.current_player] != True)
             self.resigned[self.current_player] == True
-            reward = -piece["K"]
+            reward = -1
             done = True
             info = {"history":self.get_history_positions()}
             return self.generate_observation(), reward, done, info
@@ -315,22 +316,32 @@ class ChineseChessEnv(gym.Env):
                 raise RuntimeError(f"action {action} not recognized")
             from_str, to_str = action_str[:2], action_str[2:]
             from_cord, to_cord = ChineseChessEnv.str2cord(from_str), ChineseChessEnv.str2cord(to_str)
-            reward = self.pos.value((from_cord, to_cord))
+            value_diff = self.pos.value((from_cord, to_cord))
+            self.pos.value((from_cord, to_cord))
+            move_piece = self.pos.board[from_cord]
             self.pos = self.pos.move((from_cord, to_cord))
             self.his.append(copy.copy(self.pos.board))
+            self.his = self.his[-6:]
             self.boardcount.setdefault(self.pos.board, 0)
             self.boardcount[self.pos.board] += 1
-            if self.boardcount[self.pos.board] > 3:
-                done = True
-                reward = -piece["K"]
+
+            reward = 0
+            if self.boardcount[self.pos.board] >= 3:
+                if move_piece != "K":
+                    done = True
+                    reward = -1
             elif not self.pos.player_has_king():
                 # 这里条件是player has king，但是由于在pos.move中局面被rotate过（红黑交换），所以这里其实在判断这一步完成后是否已经吃掉对方将军
                 done = True
+                reward = 1
             else:
                 done = False
             # 交换红黑方
             self.current_player = 1 - self.current_player
-            info = {"history":self.get_history_positions()}
+            info = {
+                "history":self.get_history_positions(),
+                "value": value_diff,
+            }
             return self.generate_observation(), reward, done, info
 
     def reset(self):
