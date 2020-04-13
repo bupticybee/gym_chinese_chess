@@ -351,6 +351,7 @@ class ChineseChessEnv(gym.Env):
         self.current_player = 0
         self.resigned = [False, False]
         self.boardcount = {}
+        return self.generate_observation()
 
     def render(self, mode='human'):
         return self.pos.print_pos()
