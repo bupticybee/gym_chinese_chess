@@ -281,7 +281,7 @@ class ChineseChessEnv(gym.Env):
 
         self.observation_space = spaces.Box(-7, 7, (self.cache_steps, 10, 9))  # board 8x8
         # 棋盘的笛卡尔积 + 投降
-        self.action_space = spaces.Discrete(90 * 90 + 1)
+        self.action_space = spaces.Discrete(90 * 90)
         self.current_player = 0
         self.resigned = [False, False]
         self.boardcount = {}
@@ -437,5 +437,6 @@ class ChineseChessEnv(gym.Env):
             # 如果已经投降或者议和，返回空的move数组
             moves = []
         else:
-            moves.append("resign")
+            pass
+            #moves.append("resign")
         return moves
