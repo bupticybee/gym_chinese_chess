@@ -378,7 +378,7 @@ class ChineseChessEnv(gym.Env):
 
     @staticmethod
     def resign_action():
-        return 90 * 90 + 1
+        return 90 * 90
 
     @staticmethod
     def has_resigned(action):
