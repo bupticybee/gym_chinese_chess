@@ -275,7 +275,8 @@ class Position(namedtuple('Position', 'board')):
 
 
 class ChineseChessEnv(gym.Env):
-    fontText = ImageFont.truetype(os.path.join(os.path.dirname(__file__), "..","..","fonts","msjh.ttf"), 80, encoding="utf-8")
+    fontText = ImageFont.truetype(os.path.join(os.path.dirname(__file__), "..", "..", "fonts", "msjh.ttf"), 80,
+                                  encoding="utf-8")
 
     def __init__(self):
         self.cache_steps = 6
@@ -303,11 +304,11 @@ class ChineseChessEnv(gym.Env):
                 observation[i] = Position(one_pos).rotate().to_numpy()
         return observation
 
-    def cv2ImgAddText(self,draw, text, left, top, textColor=(0, 255, 0)):
+    def cv2ImgAddText(self, draw, text, left, top, textColor=(0, 255, 0)):
         draw.text((left, top), text, textColor, font=ChineseChessEnv.fontText)
 
     def generate_image(self):
-        image = np.ones([1000, 820, 3],dtype=np.uint8)
+        image = np.ones([1000, 820, 3], dtype=np.uint8)
         image = Image.fromarray(image)
         draw = ImageDraw.Draw(image)
 
@@ -320,7 +321,7 @@ class ChineseChessEnv(gym.Env):
             y = y0 + i * dy
             x0 = -20
             dx = 70
-            for j,one_char in enumerate(one_txt):
+            for j, one_char in enumerate(one_txt):
                 x = x0 + j * dx
                 if one_char in "．":
                     textColor = (0, 255, 0)
@@ -331,7 +332,7 @@ class ChineseChessEnv(gym.Env):
                 else:
                     textColor = (0, 0, 255)
 
-                self.cv2ImgAddText(draw,one_char,x,y,textColor)
+                self.cv2ImgAddText(draw, one_char, x, y, textColor)
 
         return image
 
