@@ -7,6 +7,9 @@ import copy
 from itertools import count
 from collections import namedtuple
 import numpy as np
+import cv2
+from PIL import Image, ImageDraw, ImageFont
+import os
 
 piece = {'P': 44, 'N': 108, 'B': 23, 'R': 233, 'A': 23, 'C': 101, 'K': 2500}
 
@@ -262,9 +265,9 @@ class Position(namedtuple('Position', 'board')):
         uni_pieces = {'R': 1, 'N': 2, 'B': 3, 'A': 4, 'K': 5, 'P': 6, 'C': 7,
                       'r': -1, 'n': -2, 'b': -3, 'a': -4, 'k': -5, 'p': -6, 'c': -7, '.': 0}
         ind = 0
-        out_array = np.zeros((10,9))
+        out_array = np.zeros((10, 9))
         for i, row in enumerate(self.board.split()):
-            row = row.replace(" ","")
+            row = row.replace(" ", "")
             if row:
                 out_array[ind] = np.asarray([uni_pieces[j] for j in row])
                 ind += 1
@@ -272,6 +275,8 @@ class Position(namedtuple('Position', 'board')):
 
 
 class ChineseChessEnv(gym.Env):
+    fontText = ImageFont.truetype(os.path.join(os.path.dirname(__file__), "..","..","fonts","msjh.ttf"), 80, encoding="utf-8")
+
     def __init__(self):
         self.cache_steps = 6
         self.pos = Position(initial)
@@ -290,13 +295,45 @@ class ChineseChessEnv(gym.Env):
         return [Position(i) for i in self.his]
 
     def generate_observation(self):
-        observation = np.zeros([self.cache_steps,10,9])
-        for i,one_pos in enumerate(self.his[::-1][:self.cache_steps]):
+        observation = np.zeros([self.cache_steps, 10, 9])
+        for i, one_pos in enumerate(self.his[::-1][:self.cache_steps]):
             if i % 2 == 0:
                 observation[i] = Position(one_pos).to_numpy()
             else:
                 observation[i] = Position(one_pos).rotate().to_numpy()
         return observation
+
+    def cv2ImgAddText(self,draw, text, left, top, textColor=(0, 255, 0)):
+        draw.text((left, top), text, textColor, font=ChineseChessEnv.fontText)
+
+    def generate_image(self):
+        image = np.ones([1000, 820, 3],dtype=np.uint8)
+        image = Image.fromarray(image)
+        draw = ImageDraw.Draw(image)
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+
+        y0, dy = -10, 80
+        text = self.render()
+        # Using cv2.putText() method
+        for i, one_txt in enumerate(text.split('\n')):
+            y = y0 + i * dy
+            x0 = -20
+            dx = 70
+            for j,one_char in enumerate(one_txt):
+                x = x0 + j * dx
+                if one_char in "．":
+                    textColor = (0, 255, 0)
+                elif one_char in "1234567890ａｂｃｄｅｆｇｈｉ":
+                    textColor = (255, 255, 255)
+                elif one_char in "车马相仕帅兵炮":
+                    textColor = (255, 0, 0)
+                else:
+                    textColor = (0, 0, 255)
+
+                self.cv2ImgAddText(draw,one_char,x,y,textColor)
+
+        return image
 
     def step(self, action):
         possible_actions = self.get_possible_actions()
@@ -308,7 +345,7 @@ class ChineseChessEnv(gym.Env):
             self.resigned[self.current_player] == True
             reward = -1
             done = True
-            info = {"history":self.get_history_positions()}
+            info = {"history": self.get_history_positions()}
             return self.generate_observation(), reward, done, info
         else:
             # action str 应该类似b2e2
@@ -339,7 +376,7 @@ class ChineseChessEnv(gym.Env):
             # 交换红黑方
             self.current_player = 1 - self.current_player
             info = {
-                "history":self.get_history_positions(),
+                "history": self.get_history_positions(),
                 "value": value_diff,
             }
             return self.generate_observation(), reward, done, info
@@ -438,5 +475,5 @@ class ChineseChessEnv(gym.Env):
             moves = []
         else:
             pass
-            #moves.append("resign")
+            # moves.append("resign")
         return moves
