@@ -334,7 +334,7 @@ class ChineseChessEnv(gym.Env):
 
                 self.cv2ImgAddText(draw, one_char, x, y, textColor)
 
-        return image
+        return np.asarray(image)
 
     def step(self, action):
         possible_actions = self.get_possible_actions()
