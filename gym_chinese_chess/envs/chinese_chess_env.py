@@ -307,7 +307,7 @@ class ChineseChessEnv(gym.Env):
     def cv2ImgAddText(self, draw, text, left, top, textColor=(0, 255, 0)):
         draw.text((left, top), text, textColor, font=ChineseChessEnv.fontText)
 
-    def generate_image(self):
+    def generate_image(self, mode='relative'):
         image = np.ones([1000, 820, 3], dtype=np.uint8)
         image = Image.fromarray(image)
         draw = ImageDraw.Draw(image)
@@ -315,7 +315,7 @@ class ChineseChessEnv(gym.Env):
         font = cv2.FONT_HERSHEY_SIMPLEX
 
         y0, dy = -10, 80
-        text = self.render()
+        text = self.render(mode=mode)
         # Using cv2.putText() method
         for i, one_txt in enumerate(text.split('\n')):
             y = y0 + i * dy
@@ -391,8 +391,18 @@ class ChineseChessEnv(gym.Env):
         self.boardcount = {}
         return self.generate_observation()
 
-    def render(self, mode='human'):
-        return self.pos.print_pos()
+    def render(self, mode='relative'):
+        if mode == "relative":
+            return self.pos.print_pos()
+        elif mode == "absolute":
+            if self.current_player == 0:
+                return self.pos.print_pos()
+            elif self.current_player == 1:
+                return self.pos.rotate().print_pos()
+            else:
+                raise RuntimeError("unknown player {}".format(self.current_player))
+        else:
+            raise RuntimeError("unknown mode {}".format(mode))
 
     @staticmethod
     def str2cord(c):
