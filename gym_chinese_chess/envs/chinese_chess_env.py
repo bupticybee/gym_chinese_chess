@@ -368,6 +368,8 @@ class ChineseChessEnv(gym.Env):
                 if move_piece != "K":
                     done = True
                     reward = -1
+                else:
+                    done = False
             elif not self.pos.player_has_king():
                 # 这里条件是player has king，但是由于在pos.move中局面被rotate过（红黑交换），所以这里其实在判断这一步完成后是否已经吃掉对方将军
                 done = True
